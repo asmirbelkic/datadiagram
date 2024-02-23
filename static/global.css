@@ -1,0 +1,13 @@
+body {
+	background: #1e1f22;
+	height: 100vh;
+	display: flex;
+	align-items: center;
+	position: relative;
+	overflow: hidden;
+	justify-content: center;
+	font-family: "SF Mono", sans-serif;
+}
+* {
+	box-sizing: border-box;
+}
