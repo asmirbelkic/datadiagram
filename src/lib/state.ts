@@ -1,4 +1,5 @@
 import { writable, type Writable } from "svelte/store";
+export const focusedBlock = writable<string | null>(null);
 
 // Définir un type pour les positions qui accepte des clés dynamiques de type string
 export interface Positions {
@@ -54,7 +55,7 @@ export const existingDatabases: Table[] = [
 			{ name: "phone", type: "varchar", length: 250, index: 1, defaultValue: "NULL" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [0, 0],
+		position: [230, 320],
 	},
 	{
 		name: "like",
@@ -63,7 +64,7 @@ export const existingDatabases: Table[] = [
 			{ name: "post_id", type: "int", index: 2 },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [10, 10],
+		position: [630, 430],
 	},
 	{
 		name: "post",
@@ -73,6 +74,6 @@ export const existingDatabases: Table[] = [
 			{ name: "content", type: "text" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [20, 20],
+		position: [1025, 503],
 	},
 ];

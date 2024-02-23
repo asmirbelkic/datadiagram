@@ -3,6 +3,7 @@
 	import { onMount, afterUpdate } from "svelte";
 	import { existingDatabases, relations } from "$lib/state";
 	import Block from "./Block.svelte";
+	import Window from "./Window.svelte";
 	import LeaderLine from "leader-line-new";
 
 	let lines: LeaderLine[] = [];
@@ -46,7 +47,9 @@
 
 <main class="wrapper">
 	{#each existingDatabases as table (table.name)}
-		<Block {table} bind:elements />
+			<Window position={table.position} {table} {elements}>
+					<Block {table} {elements} />
+			</Window>
 	{/each}
 </main>
 

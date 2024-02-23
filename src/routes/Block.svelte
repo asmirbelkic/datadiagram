@@ -1,54 +1,22 @@
 <script lang="ts">
-	import { positions } from "$lib/state";
-	export let left = 100;
-	export let top = 100;
-	import type { Table } from "$lib/state";
 	import { types } from "$lib/state";
+
+	import type { Table } from "$lib/state";
+
 	export let table: Table;
 	export let elements: { [key: string]: HTMLElement } = {};
 
-	// Fonction pour obtenir le type
-	function getType(columnType: keyof typeof types): string {
-		return types[columnType] || columnType;
-	}
+  function getType(columnType: keyof typeof types): string {
+    return types[columnType] || columnType;
+  }
 
-	// Fonction pour obtenir l'index
-	function getIndex(index: number): string {
-		return index === 1 ? "PK" : "FK";
-	}
-
-	let moving = false;
-
-	function onMouseDown(e: MouseEvent) {
-		moving = true;
-		document.body.classList.add('no-select');
-	}
-
-	function onMouseMove(e: MouseEvent) {
-		if (moving) {
-			left += e.movementX;
-			top += e.movementY;
-		}
-	}
-
-	function onMouseUp(e: MouseEvent) {
-		moving = false;
-		document.body.classList.remove('no-select');
-	}
-
-	$: if (elements[table.name]) {
-    positions.update(currentPositions => {
-      const updatedPositions = { ...currentPositions };
-      updatedPositions[table.name] = { left, top };
-      return updatedPositions;
-    });
+  function getIndex(index: number): string {
+    return index === 1 ? "PK" : "FK";
   }
 </script>
 
-<svelte:window on:mouseup={onMouseUp} on:mousemove={onMouseMove} />
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="block" class:handling={moving} id={table.name} bind:this={elements[table.name]} on:mousedown={onMouseDown} style="left: {left}px; top: {top}px;">
-	<h5>{table.name}</h5>
+<div class="block" bind:this={elements[table.name]}>
+  <h5>{table.name}</h5>
 	{#each table.fields as column (column.name)}
 		<div class="item" class:active={column.linked} id={`${table.name}-${column.name}`} bind:this={elements[`${table.name}-${column.name}`]}>
 			<span>{column.name}</span>
@@ -59,7 +27,7 @@
 			{#if column.index}
 				<span class:blue={column.index === 2}>{getIndex(column.index)}</span>
 			{/if}
-			<div class="group-buttons">
+			<!-- <div class="group-buttons">
 				<button>
 					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<path d="M12 12V4M12 12V20M12 12H20M12 12H4" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -75,14 +43,15 @@
 						<path d="M6 9V18C6 19.6569 7.34315 21 9 21H15C16.6569 21 18 19.6569 18 18V9M14 10V17M10 10V17M4 6H20M16 6V5C16 3.89543 15.1046 3 14 3H11.5H10C8.89543 3 8 3.89543 8 5V6" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
 				</button>
-			</div>
+			</div> -->
 		</div>
 	{/each}
 </div>
 
 <style lang="scss">
 	.block {
-		position: absolute;
+		user-select: none;
+		-webkit-user-drag: none;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
@@ -93,7 +62,10 @@
 		border: 2px solid #464b55;
 		position: relative;
 		transform: rotate(0);
-		transition: transform 0.2s ease-in-out;
+		transition:
+			transform 0.2s ease-in-out,
+			border-color 0.2s ease-in-out,
+			box-shadow 0.2s ease-in-out;
 		h5 {
 			position: absolute;
 			left: 0;
@@ -102,6 +74,9 @@
 			font-weight: 300;
 			margin-top: -35px;
 			color: #9e9e9e;
+		}
+		&.focus {
+			border-color: #1371ff;
 		}
 		.item {
 			border-radius: 6px;
@@ -186,9 +161,9 @@
 		}
 	}
 	:global(.no-select) {
-    user-select: none;
-    -moz-user-select: none;
-    -webkit-user-select: none;
-    -ms-user-select: none;
+		user-select: none;
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
 	}
 </style>
