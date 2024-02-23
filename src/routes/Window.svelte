@@ -4,12 +4,18 @@
 	export let table: Table;
 	export let elements: { [key: string]: HTMLElement } = {};
 	export let position: [number, number];
-	let x: number = position[0] || 0, y: number = position[1] || 0;
+	let x: number = position[0] * 25 || 0, y: number = position[1] * 25 || 0;
 
 	let moving: boolean = false;
 	let mainElement: HTMLElement;
 
 	let offsetX: number = 0, offsetY: number = 0;
+
+	const gridSize = 25; // Taille de la grille
+
+	function adjustToGrid(value:any) {
+		return Math.round(value / gridSize) * gridSize;
+	}
 
 	const onMouseDown = (event: MouseEvent) => {
 		offsetX = event.clientX - mainElement.getBoundingClientRect().left;
@@ -25,31 +31,37 @@
 
 	const onMouseMove = (event: MouseEvent) => {
 		if (moving) {
-			mainElement.style.left = (event.clientX - offsetX) + "px";
-			mainElement.style.top = (event.clientY - offsetY) + "px";
+			let newX = adjustToGrid(event.clientX - offsetX);
+			let newY = adjustToGrid(event.clientY - offsetY);
+
+			mainElement.style.left = `${newX}px`;
+			mainElement.style.top = `${newY}px`;
 		}
 	};
 
 	const onTouchMove = (event: TouchEvent) => {
 		if (moving) {
-			mainElement.style.left = (event.touches[0].pageX - offsetX) + "px";
-			mainElement.style.top = (event.touches[0].pageY - offsetY) + "px";
+			let newX = adjustToGrid(event.touches[0].pageX - offsetX);
+			let newY = adjustToGrid(event.touches[0].pageY - offsetY);
+
+			mainElement.style.left = `${newX}px`;
+			mainElement.style.top = `${newY}px`;
 		}
 	};
 
 	$: if (elements[table.name]) {
+		const left = adjustToGrid(mainElement.offsetLeft);
+		const top = adjustToGrid(mainElement.offsetTop);
+
 		positions.update(currentPositions => {
 			const updatedPositions = { ...currentPositions };
-			updatedPositions[table.name] = {
-				left: mainElement.offsetLeft,
-				top: mainElement.offsetTop
-			};
+			updatedPositions[table.name] = { left: left / gridSize, top: top / gridSize };
 			return updatedPositions;
 		});
 	}
 </script>
 
-<main bind:this={mainElement} on:mousedown={onMouseDown} on:touchstart={onTouchStart} class="outer" style="left: {x}px; top: {y}px;">
+<main bind:this={mainElement} class:grabbing={moving} on:mousedown={onMouseDown} on:touchstart={onTouchStart} class="outer" style="left: {x}px; top: {y}px;">
 	<slot></slot>
 </main>
 
@@ -57,7 +69,16 @@
 
 <style lang="scss">
 	.outer {
-			position: absolute;
-			cursor: grab;
+		position: absolute;
+		cursor: grab;
+		transform: rotate(0);
+		transition:
+			transform 0.2s ease-in-out,
+			border-color 0.2s ease-in-out,
+			box-shadow 0.2s ease-in-out;
+		&.grabbing {
+			transform: rotate(-2deg);
+			cursor: grabbing !important;
+		}
 	}
 </style>

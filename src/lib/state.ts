@@ -42,7 +42,6 @@ export const types = {
 export const relations = [
 	{ from: "user-id", to: "like-user_id" },
 	{ from: "post-id", to: "like" },
-	// Ajoutez d'autres relations ici
 ];
 
 export const existingDatabases: Table[] = [
@@ -55,7 +54,7 @@ export const existingDatabases: Table[] = [
 			{ name: "phone", type: "varchar", length: 250, index: 1, defaultValue: "NULL" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [230, 320],
+		position: [10, 12],
 	},
 	{
 		name: "like",
@@ -64,7 +63,7 @@ export const existingDatabases: Table[] = [
 			{ name: "post_id", type: "int", index: 2 },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [630, 430],
+		position: [25, 18],
 	},
 	{
 		name: "post",
@@ -74,6 +73,6 @@ export const existingDatabases: Table[] = [
 			{ name: "content", type: "text" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [1025, 503],
+		position: [42, 20],
 	},
 ];

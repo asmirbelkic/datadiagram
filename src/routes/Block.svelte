@@ -60,12 +60,6 @@
 		width: 340px;
 		border-radius: 10px;
 		border: 2px solid #464b55;
-		position: relative;
-		transform: rotate(0);
-		transition:
-			transform 0.2s ease-in-out,
-			border-color 0.2s ease-in-out,
-			box-shadow 0.2s ease-in-out;
 		h5 {
 			position: absolute;
 			left: 0;
@@ -154,10 +148,6 @@
 					display: flex;
 				}
 			}
-		}
-		&.handling {
-			transform: rotate(-2deg);
-			cursor: grabbing !important;
 		}
 	}
 	:global(.no-select) {
