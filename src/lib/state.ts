@@ -1,6 +1,16 @@
 import { writable, type Writable } from "svelte/store";
 export const focusedBlock = writable<string | null>(null);
 
+
+interface Editor {
+  width: number;
+  height: number;
+  element?: HTMLElement; // Ajoutez cette ligne pour stocker l'élément
+}
+
+// Initialisez le store avec un objet vide respectant l'interface, ou null si vous préférez.
+export const editor = writable<Editor>({ width: 0, height: 0 });
+
 // Définir un type pour les positions qui accepte des clés dynamiques de type string
 export interface Positions {
   [key: string]: {
@@ -25,6 +35,7 @@ export interface Table {
 	fields: Column[];
 	elements?: HTMLElement;
 	position: [number, number];
+	readOnly?: boolean | null;
 }
 
 export const index = {
@@ -36,7 +47,7 @@ export const types = {
 	int: "int",
 	varchar: "varchar",
 	timestamp: "timestamp",
-	text: "text", // Ajoutez cette ligne
+	text: "text",
 };
 
 export const relations = [
@@ -44,7 +55,7 @@ export const relations = [
 	{ from: "post-id", to: "like" },
 ];
 
-export const existingDatabases: Table[] = [
+export const cards = writable<Array<Table>>([
 	{
 		name: "user",
 		fields: [
@@ -54,7 +65,7 @@ export const existingDatabases: Table[] = [
 			{ name: "phone", type: "varchar", length: 250, index: 1, defaultValue: "NULL" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [10, 12],
+		position: [0, 0],
 	},
 	{
 		name: "like",
@@ -63,7 +74,7 @@ export const existingDatabases: Table[] = [
 			{ name: "post_id", type: "int", index: 2 },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [25, 18],
+		position: [450, 150],
 	},
 	{
 		name: "post",
@@ -73,6 +84,6 @@ export const existingDatabases: Table[] = [
 			{ name: "content", type: "text" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [42, 20],
+		position: [850, 250],
 	},
-];
+]);
