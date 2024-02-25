@@ -7,7 +7,7 @@ body {
 	position: relative;
 	overflow: hidden;
 	justify-content: center;
-	font-family: "SF Mono", sans-serif;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 * {
 	box-sizing: border-box;

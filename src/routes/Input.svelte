@@ -17,21 +17,29 @@
 	};
 
 	let ref: HTMLInputElement;
+
+	function handleInput() {
+		if (type === "number" && value !== null && typeof value === "string") {
+			let numericValue = parseFloat(value); // Convertit la chaîne en nombre
+			if (numericValue > 65535) {
+				numericValue = 65535; // Applique la valeur maximale
+				value = numericValue.toString(); // Convertit le nombre en chaîne
+			}
+
+			// Limiter la valeur à 65535 caractères maximum.
+			value = value
+				.slice(0, 65535)
+				.replace(/[^0-9.]/g, "")
+				.replace(/(\..*)\./g, "$1");
+			// Calculer la longueur souhaitée avec un minimum de 4ch et un maximum de 8ch.
+			const desiredLength = Math.min(Math.max(value.length + 1, 4), 8);
+			const newWidth = `${desiredLength}ch`;
+			ref.style.width = newWidth;
+		}
+	}
 </script>
 
-<input
-	bind:this={ref}
-	{placeholder}
-	bind:value
-	autocomplete="false"
-	spellcheck="false"
-	{readonly}
-	style={fromLayout()}
-	on:input={() => {
-		if (type == "number") ref.value = ref.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
-		if (type == "number" && ref.value.length > 3) ref.value = ref.value.slice(0, 3);
-	}}
-/>
+<input bind:this={ref} {placeholder} bind:value autocomplete="false" spellcheck="false" {readonly} maxlength="65535" style={fromLayout()} {...$$restProps} on:input={handleInput} />
 
 <style lang="scss">
 	input {

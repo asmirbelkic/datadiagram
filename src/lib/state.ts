@@ -84,6 +84,6 @@ export const cards = writable<Array<Table>>([
 			{ name: "content", type: "text" },
 			{ name: "created_at", type: "timestamp" },
 		],
-		position: [850, 250],
+		position: [900, 280],
 	},
 ]);

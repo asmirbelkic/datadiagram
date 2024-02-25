@@ -30,7 +30,7 @@
 	}
 </script>
 
-<main bind:this={elements[table.name]} use:clickOutside={() => (readOnly = false)} class:focus={readOnly}>
+<main bind:this={elements[table.name]} class:focus={readOnly}>
 	<div class="block">
 		{#each table.fields as column, i}
 			<div class="item" class:active={column.linked} id={`${table.name}-${column.name}`} bind:this={elements[`${table.name}-${column.name}`]}>

@@ -66,17 +66,12 @@
 		data.splice(index, 1);
 		data = [...data];
 	}
-
-	function updateTable(i: number, newReadOnly: any) {
-		data[i] = { ...data[i], readOnly: newReadOnly };
-		data = [...data];
-	}
 </script>
 
 <main class="wrapper">
 	<Editor>
 		{#each data as table, i}
-			<Window {table} readOnly={table.readOnly || false} on:update={({ detail }) => updateTable(i, detail.readOnly)}>
+			<Window bind:name={table.name} bind:position={table.position} bind:readOnly={table.readOnly}>
 				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} />
 			</Window>
 		{/each}
