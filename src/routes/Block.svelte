@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { types } from "$lib/state";
 
+	import SortableList from "./SortableList.svelte";
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
 	import Input from "./Input.svelte";
 	import Dropdown from "./Dropdown.svelte";
 	import type { Table } from "$lib/state";
-	import { clickOutside } from "$lib/util";
 
 	export let index: number;
 	export let table: Table;
@@ -15,6 +15,11 @@
 	function getType(columnType: keyof typeof types): string {
 		return types[columnType] || columnType;
 	}
+
+	function sortFieldsByid(fields: Table["fields"]) {
+		return fields.sort((a, b) => a.id - b.id);
+	}
+	let sortedFields = sortFieldsByid(table.fields);
 
 	function getIndex(index: number): string {
 		return index === 1 ? "PK" : "FK";
@@ -28,32 +33,58 @@
 	function deleteTable(index: number) {
 		dispatch("delete", { index });
 	}
+
+	function sortList(event: CustomEvent) {
+		sortedFields = event.detail;
+	}
+
+	function removeLink(name: string, id: number) {
+		dispatch("removeLink", { name, id });
+	}
+
+	function addLink(id: string) {
+		dispatch("addLink", { id });
+	}
 </script>
 
-<main bind:this={elements[table.name]} class:focus={readOnly}>
-	<div class="block">
-		{#each table.fields as column, i}
-			<div class="item" class:active={column.linked} id={`${table.name}-${column.name}`} bind:this={elements[`${table.name}-${column.name}`]}>
-				<span>
-					<Input type="text" value={column.name} layout="flex" readonly={!readOnly} />
+<main bind:this={elements[table.name]}>
+	<!-- <div class="block"> -->
+	<SortableList list={sortedFields} {elements} tablename={table.name} on:sort={sortList} let:item let:index>
+		<span class="item name">
+			<Input type="text" value={item.name} layout="flex" readonly={!readOnly} />
+		</span>
+		<span class="item type">
+			<Dropdown {options} layout="auto" type={getType(item.type)} selected={item.type} bind:editable={readOnly} value={item.length} />
+		</span>
+		<span class="item isNull" class:null={item.defaultValue === "NULL"}>{item.defaultValue !== undefined ? item.defaultValue : ""}</span>
+		{#if item.index}
+			<span class:blue={item.index === 2} class="item key">{getIndex(item.index)}</span>
+		{/if}
+		{#if readOnly}
+			{#if !item.linked}
+				<span class="item link" on:click={() => addLink(`${table.name}-${item.name}`)}>
+					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="s-WdYVzRglSv5Z">
+						<path d="M16 17L22 11L16 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
+						<path d="M3.91164 19.3885C4.29807 17.7083 5.04197 16.1312 6.09271 14.7644C7.14345 13.3976 8.47636 12.2733 10.0007 11.468C11.525 10.6626 13.205 10.1952 14.9262 10.0975C16.6474 9.99977 18.3695 10.2741 19.9752 10.9017" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
+					</svg>
 				</span>
-				<span>
-					<Dropdown {options} layout="auto" type={getType(column.type)} bind:selected={column.type} bind:editable={readOnly} value={column.length} />
+			{:else}
+				<span class="item link" on:click={() => removeLink(`${table.name}-${item.name}`, item.id)}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
+						<line x1="18" y1="6" x2="6" y2="18"></line>
+						<line x1="6" y1="6" x2="18" y2="18"></line>
+					</svg>
 				</span>
-				<span class:null={column.defaultValue === "NULL"}>{column.defaultValue !== undefined ? column.defaultValue : ""}</span>
-				{#if column.index}
-					<span class:blue={column.index === 2}>{getIndex(column.index)}</span>
-				{/if}
-			</div>
-		{/each}
-	</div>
-	{#if readOnly}
-		<div class="group-buttons">
-			<button class="btn blue" on:click={() => addNewItem(index)}>Add item</button>
-			<button class="btn" on:click={() => deleteTable(index)}>Delete</button>
-		</div>
-	{/if}
+			{/if}
+		{/if}
+	</SortableList>
 </main>
+{#if readOnly}
+<div class="group-buttons">
+	<button class="btn blue" on:click={() => addNewItem(index)}>Add item</button>
+	<button class="btn" on:click={() => deleteTable(index)}>Delete</button>
+</div>
+{/if}
 
 <style lang="scss">
 	.group-buttons {
@@ -87,93 +118,89 @@
 		user-select: none;
 		-webkit-user-drag: none;
 		display: grid;
+		padding: 10px;
+		background: #252629;
+		width: 400px;
+		border-radius: 10px;
+		border: 2px solid #363841;
 		&.focus {
-			h5 {
-				color: #fff;
-				background: rgba(89, 96, 110, 0.3);
-			}
-			.block {
-				border-color: #1371ff;
-			}
+			border-color: #1371ff;
 		}
 	}
 
-	.block {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		padding: 10px;
-		background: #252629;
-		width: 360px;
-		border-radius: 10px;
-		border: 2px solid #363841;
-
-		.item {
-			border-radius: 6px;
-			width: 100%;
-			display: grid;
-			grid-template-columns: minmax(100px, 1fr) minmax(130px, 1fr) 1fr auto;
-			flex-direction: row;
+	.item {
+		font-family: "SF Mono";
+		font-style: normal;
+		font-weight: 300;
+		font-size: 14px;
+		line-height: 17px;
+		color: #ffffff;
+		flex: none;
+		flex-grow: 0;
+		&.move {
+			display: flex;
 			align-items: center;
-			padding: 4px 8px;
-			gap: 8px;
-			flex: none;
-			order: 0;
-			flex-grow: 1;
-			&.active {
-				background: rgba(255, 255, 255, 0.05);
-			}
-			span {
-				font-family: "SF Mono";
-				font-style: normal;
-				font-weight: 300;
-				font-size: 14px;
-				line-height: 17px;
-				color: #ffffff;
-				flex: none;
-				flex-grow: 1;
-				&.blue {
-					color: #1371ff;
-				}
-				&.null {
-					color: #9e9e9e;
-				}
-			}
-			.group-buttons {
-				z-index: 999;
-				position: absolute;
-				left: calc(100% - 10px);
-				display: none;
-				padding: 4px;
-				border-radius: 8px;
-				border: 2px solid #464b55;
-				background: #252629;
-				box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;
-				gap: 4px;
-				button {
-					appearance: none;
-					background-color: inherit;
-					aspect-ratio: 1;
-					border: 0;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					border-radius: 6px;
-					cursor: pointer;
-					&:hover {
-						background-color: #464b55;
-					}
-					svg {
-						width: 16px;
-						height: 16px;
-						color: #fff;
-					}
-				}
+			flex-basis: fit-content;
+		}
+		&.link {
+			cursor: pointer;
+			aspect-ratio: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 6px;
+			background: #3e4147;
+			width: 18px;
+			color: #9e9e9e;
+			height: 18px;
+			svg {
+				width: 10px;
+				height: 10px;
 			}
 			&:hover {
-				.group-buttons {
-					display: flex;
-				}
+				color: #fff;
+			}
+		}
+		&.name {
+			flex-basis: 100px;
+		}
+		&.type {
+			flex-basis: 120px;
+		}
+		&.isNull {
+			flex-grow: 1;
+			flex-basis: auto;
+		}
+		&.key {
+			flex-basis: auto;
+		}
+		&.blue {
+			color: #1371ff;
+		}
+		&.null {
+			color: #9e9e9e;
+		}
+	}
+	.group-buttons {
+		display: flex;
+		button {
+			appearance: none;
+			background-color: inherit;
+			aspect-ratio: 1;
+			border: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 6px;
+			cursor: pointer;
+			background: #3e4147;
+			&:hover {
+				background-color: #464b55;
+			}
+			svg {
+				width: 16px;
+				height: 16px;
+				color: #fff;
 			}
 		}
 	}

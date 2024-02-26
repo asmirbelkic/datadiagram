@@ -4,11 +4,18 @@
 	export let type: "text" | "number" = "text";
 	export let value: string | number | null = null;
 	export let readonly: boolean = false;
+	export let autofocus: boolean = false;
+
 	const fromLayout = () => {
-		if (layout === "auto") {
+		if (layout === "auto" && type === "number") {
 			// Utiliser l'opérateur de coalescence nulle pour fournir une valeur par défaut si value est null
-			const length = value?.toString().length ?? 3;
-			return `width: ${length + 1}ch;`;
+			const length = value?.toString().length ?? 4;
+			return `width: ${length + 2}ch;`;
+		}
+		if (layout === "auto") {
+			const desiredLength = Math.min(Math.max((value?.toString().length ?? 0) + 1, 4), 16);
+			const newWidth = `${desiredLength}`;
+			return `width: ${newWidth}ch;`
 		}
 		if (layout == "flex") return "flex-grow: 1;";
 		if (layout == "fill") return "width: 100%;";
@@ -36,10 +43,20 @@
 			const newWidth = `${desiredLength}ch`;
 			ref.style.width = newWidth;
 		}
+		if (layout === "auto") {
+			const desiredLength = Math.min(Math.max((value?.toString().length ?? 0) + 1, 4), 16);
+			const newWidth = `${desiredLength}ch`;
+			ref.style.width = newWidth;
+		}
+	}
+
+	let styles = fromLayout();
+	if ($$restProps.style) {
+			styles += `; ${$$restProps.style}`;
 	}
 </script>
 
-<input bind:this={ref} {placeholder} bind:value autocomplete="false" spellcheck="false" {readonly} maxlength="65535" style={fromLayout()} {...$$restProps} on:input={handleInput} />
+<input bind:this={ref} {placeholder} {autofocus} bind:value autocomplete="false" spellcheck="false" {readonly} maxlength={type === "number" ? 65535 : null} style={styles} on:input={handleInput} />
 
 <style lang="scss">
 	input {

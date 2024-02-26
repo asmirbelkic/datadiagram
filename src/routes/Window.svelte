@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { positions } from "$lib/state";
+	import { positions, isSelecting, hoveredElement, selectedElement } from "$lib/state";
 	import { clickOutside } from "$lib/util";
+	export let handleElementClick: (name: string) => void; // Fonction pour gérer le clic sur l'élément
 	export let name: string;
 	export let position: [number, number] = [0, 0];
 	export let readOnly: boolean | null = false;
@@ -47,30 +48,56 @@
 		}
 	};
 
+	function handleClick() {
+		isSelecting.set(true);
+		selectedElement.set(name); // Utilisez l'identifiant ou une propriété unique de votre choix
+	}
+
 	function toggleReadOnly() {
 		if (!editName) readOnly = !readOnly;
 	}
+
+	function handleMouseEnter() {
+		hoveredElement.set(name); // Mettez à jour l'élément survolé
+	}
+
+	function handleMouseLeave() {
+		hoveredElement.set(null); // Réinitialisez l'élément survolé lorsqu'il n'est plus survolé
+	}
+
+	function handleOutsideClick() {
+		readOnly = false;
+		if ($isSelecting && !$hoveredElement) {
+			selectedElement.set(null); // Réinitialiser l'élément sélectionné
+			isSelecting.set(false); // Désactivez le mode de sélection
+		}
+	}
 </script>
 
-<main bind:this={mainElement} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={() => readOnly = false}>
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore a11y-mouse-events-have-key-events -->
+<main bind:this={mainElement} on:click|stopPropagation={() => handleElementClick(name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:selected={name === $selectedElement} class:unhovered={$isSelecting && name === $selectedElement} class:hovered={$isSelecting && $hoveredElement === name && $selectedElement !== name} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
 	<header>
-		<h5 on:click|stopPropagation={toggleReadOnly} on:dblclick={() => (editName = true)}>
+		<h5 on:dblclick={() => (editName = true)}>
 			{#if readOnly}
 				<i class="edit"></i>
 			{/if}
 			{#if editName}
-				<Input type="text" style='height: 18px; width: 120px' bind:value={name} />
+				<Input type="text" style="height: 18px;" layout="auto" autofocus={true} bind:value={name} />
 			{:else}
 				<span>{name}</span>
 			{/if}
 		</h5>
 		{#if editName}
-		<span class="btn" on:click={() => {
-			readOnly = !readOnly;
-			editName = false;
-		}}>
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
-		</span>
+			<span
+				class="btn"
+				on:click={() => {
+					editName = false;
+				}}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
+			</span>
 		{/if}
 		<span class="btn grab" on:mousedown|stopPropagation={onMouseDown}>
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-move">
@@ -80,6 +107,19 @@
 				<polyline points="19 9 22 12 19 15"></polyline>
 				<line x1="2" y1="12" x2="22" y2="12"></line>
 				<line x1="12" y1="2" x2="12" y2="22"></line>
+			</svg>
+		</span>
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<span class="btn" on:click|stopPropagation={toggleReadOnly}>
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3">
+				<path d="M12 20h9"></path>
+				<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+			</svg>
+		</span>
+		<span class="btn" on:click|stopPropagation={handleClick}>
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M16 17L22 11L16 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+				<path d="M3.91164 19.3885C4.29807 17.7083 5.04197 16.1312 6.09271 14.7644C7.14345 13.3976 8.47636 12.2733 10.0007 11.468C11.525 10.6626 13.205 10.1952 14.9262 10.0975C16.6474 9.99977 18.3695 10.2741 19.9752 10.9017" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 			</svg>
 		</span>
 	</header>
@@ -96,6 +136,19 @@
 		display: flex;
 		flex-direction: column;
 		transition: transform 0.12s ease;
+		border-radius: 12px;
+		outline-offset: 4px;
+		outline: 2px solid transparent;
+		&.selected {
+			outline-color: #00b894;
+		}
+		&:hover.unhovered {
+			outline-color: #d63031 !important;
+		}
+
+		&.hovered {
+			outline-color: #3d91ff;
+		}
 		header {
 			gap: 8px;
 			align-items: center;
@@ -118,8 +171,8 @@
 					}
 				}
 				i {
-					width: 6px;
-					height: 6px;
+					width: 5px;
+					height: 5px;
 					display: block;
 					border-radius: 50%;
 					background: #3d91ff;
