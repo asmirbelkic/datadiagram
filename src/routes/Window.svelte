@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { positions, isSelecting, hoveredElement, selectedElement } from "$lib/state";
 	import { clickOutside } from "$lib/util";
-	export let handleElementClick: (name: string) => void; // Fonction pour gérer le clic sur l'élément
+	export let handleElementClick: (event:Event, name: string) => void; // Fonction pour gérer le clic sur l'élément
 	export let name: string;
 	export let position: [number, number] = [0, 0];
 	export let readOnly: boolean | null = false;
@@ -49,8 +49,12 @@
 	};
 
 	function handleClick() {
-		isSelecting.set(true);
-		selectedElement.set(name); // Utilisez l'identifiant ou une propriété unique de votre choix
+		$isSelecting = !$isSelecting
+		if($isSelecting) {
+			selectedElement.set(name);
+		} else {
+			selectedElement.set(null);
+		}
 	}
 
 	function toggleReadOnly() {
@@ -58,11 +62,11 @@
 	}
 
 	function handleMouseEnter() {
-		hoveredElement.set(name); // Mettez à jour l'élément survolé
+		hoveredElement.set({ table: name, column: null }); // Exemple pour Window
 	}
 
 	function handleMouseLeave() {
-		hoveredElement.set(null); // Réinitialisez l'élément survolé lorsqu'il n'est plus survolé
+    hoveredElement.set({ table: null, column: null });
 	}
 
 	function handleOutsideClick() {
@@ -77,7 +81,8 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-<main bind:this={mainElement} on:click|stopPropagation={() => handleElementClick(name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:selected={name === $selectedElement} class:unhovered={$isSelecting && name === $selectedElement} class:hovered={$isSelecting && $hoveredElement === name && $selectedElement !== name} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
+<!-- <main bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:selected={name === $selectedElement} class:unhovered={$isSelecting && name === $selectedElement} class:hovered={$isSelecting && $hoveredElement.table === name && $selectedElement !== name} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
+<main bind:this={mainElement} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
 	<header>
 		<h5 on:dblclick={() => (editName = true)}>
 			{#if readOnly}
@@ -116,12 +121,12 @@
 				<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
 			</svg>
 		</span>
-		<span class="btn" on:click|stopPropagation={handleClick}>
+		<!-- <span class="btn" on:click|stopPropagation={handleClick}>
 			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M16 17L22 11L16 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 				<path d="M3.91164 19.3885C4.29807 17.7083 5.04197 16.1312 6.09271 14.7644C7.14345 13.3976 8.47636 12.2733 10.0007 11.468C11.525 10.6626 13.205 10.1952 14.9262 10.0975C16.6474 9.99977 18.3695 10.2741 19.9752 10.9017" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 			</svg>
-		</span>
+		</span> -->
 	</header>
 	<slot />
 </main>
@@ -145,10 +150,10 @@
 		&:hover.unhovered {
 			outline-color: #d63031 !important;
 		}
-
 		&.hovered {
 			outline-color: #3d91ff;
 		}
+
 		header {
 			gap: 8px;
 			align-items: center;

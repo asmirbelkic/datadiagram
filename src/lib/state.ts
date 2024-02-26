@@ -95,5 +95,7 @@ export const cards = writable<Array<Table>>([
 ]);
 
 export let isSelecting = writable(false);
+// Is selection true or false and what is the type of the selection (table or column)
 export let selectedElement = writable<null | string>(null);
-export let hoveredElement = writable<null | string>(null);
+// export let hoveredElement = writable<null | string>(null);
+export const hoveredElement = writable<{ table: string | null; column: string | null }>({ table: null, column: null });

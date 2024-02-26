@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Table } from "$lib/state";
 	import { positions, hoveredElement, selectedElement, isSelecting } from "$lib/state";
-	import { onMount, afterUpdate } from "svelte";
+	import { onMount, onDestroy } from 'svelte';
 	import { cards, relations } from "$lib/state";
 	import Block from "./Block.svelte";
 	import Window from "./Window.svelte";
@@ -11,8 +11,19 @@
 	let elements: { [key: string]: HTMLElement } = {};
 	import { get } from "svelte/store";
 
-	let tempPoint; // Référence à l'élément temporaire
-  let mouseLine = null;
+	let startPoint; // L'élément d'où part la ligne
+  let endPoint; // L'élément vers lequel la ligne pointe temporairement
+  let line = null; // Instance de LeaderLine
+  let isConnecting = false; // État indiquant si le mode de connexion est activé
+
+	onMount(() => {
+    document.addEventListener('mousemove', updateLinePosition);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener('mousemove', updateLinePosition);
+  });
+
 	let data: Array<Table> = [];
 	cards.subscribe((value) => {
 		data = value;
@@ -51,7 +62,7 @@
 	}
 
 	onMount(createLines);
-	afterUpdate(createLines);
+	// afterUpdate(createLines);
 
 	function createTable(event: CustomEvent<{ index: number }>) {
 		let index = event.detail.index;
@@ -70,7 +81,7 @@
 		data = [...data];
 	}
 
-	function onLinkRemove(event: CustomEvent<{ name: string, id: number, }>) {
+	function onLinkRemove(event: CustomEvent<{ name: string; id: number }>) {
 		const { name, id } = event.detail;
 		console.log(id, name);
 
@@ -78,73 +89,56 @@
 			const updatedRelations = currentRelations.filter((relation) => relation.from !== name && relation.to !== name);
 			return updatedRelations;
 		});
-		cards.update(currentCards => {
-        return currentCards.map(card => {
-            if (card.name === name) {
-                return {
-                    ...card,
-                    fields: card.fields.map(field => {
-                        if (field.id === id) {
-                            return { ...field, linked: false };
-                        }
-                        return field;
-                    })
-                };
-            }
-            return card;
-        });
-    });
-		console.log(data[0].fields[id].linked);
-
 	}
 
 	// Exemple d'utilisation dans une fonction de clic
-	export function handleElementClick(elementId: string) {
-		if($selectedElement === elementId) {
+	export function handleElementClick(event: Event, elementId: string) {
+		event.stopPropagation();
+		console.log(elementId);
+
+		if ($selectedElement === elementId) {
 			selectedElement.set(null);
 			isSelecting.set(false);
 		}
-    const currentlySelecting = get(isSelecting);
-    if (!currentlySelecting) return;
+		const currentlySelecting = get(isSelecting);
+		if (!currentlySelecting) return;
 
-    const currentSelected = get(selectedElement);
-    if (currentSelected) {
-        relations.update(current => [...current, { from: currentSelected, to: elementId }]);
-        selectedElement.set(null); // Réinitialisez après la création
-        isSelecting.set(false); // Désactivez le mode de sélection
-    } else {
-        selectedElement.set(elementId);
-    }
-}
+		const currentSelected = get(selectedElement);
 
-	function handleElementHover(elementId: string) {
-		if (!isSelecting) return;
-		hoveredElement.set(elementId);
-	}
-
-	function handleElementHoverLeave() {
-		hoveredElement.set(null);
+		if (currentSelected) {
+			relations.update((current) => [...current, { from: currentSelected, to: elementId }]);
+			selectedElement.set(null); // Réinitialisez après la création
+			isSelecting.set(false); // Désactivez le mode de sélection
+		} else {
+			selectedElement.set(elementId);
+		}
+		createLines();
 	}
 </script>
 
 <main class="wrapper">
 	<Editor>
 		{#each data as table, i}
-			<Window bind:name={table.name} bind:position={table.position} bind:readOnly={table.readOnly} handleElementClick={() => handleElementClick(table.name)}>
-				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} on:removeLink={onLinkRemove} />
+			<Window bind:name={table.name} bind:position={table.position} bind:readOnly={table.readOnly} {handleElementClick}>
+				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} on:removeLink={onLinkRemove} {handleElementClick}/>
 			</Window>
 		{/each}
 	</Editor>
-	<!-- <p>{JSON.stringify($isSelecting, null, 2)}
-		{JSON.stringify($selectedElement, null, 2)}
-		{JSON.stringify($hoveredElement, null, 2)}
-		</p> -->
+	<p>
+		{JSON.stringify($selectedElement)}
+		{JSON.stringify($hoveredElement)}
+	</p>
+	<pre>{JSON.stringify($relations, null, 2)}</pre>
 </main>
-
-<svelte:window on:mousemove={updateLines} on:mouseup={updateLines} />
 
 <style lang="scss">
 	p {
+		color: white
+	}
+	pre {
+		position: fixed;
+		bottom: 20px;
+		left: 20px;
 		color: white;
 	}
 	.wrapper {

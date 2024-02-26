@@ -1,12 +1,16 @@
 <script lang="ts">
+	import { get } from "svelte/store";
 	import { types } from "$lib/state";
+	import type { Table } from "$lib/state";
+	import { isSelecting, hoveredElement, selectedElement } from "$lib/state";
 
 	import SortableList from "./SortableList.svelte";
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
+	export let handleElementClick: (event: Event, name: string) => void; // Fonction pour gérer le clic sur l'élément
+
 	import Input from "./Input.svelte";
 	import Dropdown from "./Dropdown.svelte";
-	import type { Table } from "$lib/state";
 
 	export let index: number;
 	export let table: Table;
@@ -42,48 +46,76 @@
 		dispatch("removeLink", { name, id });
 	}
 
-	function addLink(id: string) {
-		dispatch("addLink", { id });
+	function handleClick(name: string) {
+		$isSelecting = !$isSelecting;
+		if ($isSelecting) {
+			selectedElement.set(name);
+		} else {
+			selectedElement.set(null);
+		}
+	}
+
+	function handleMouseEnter(columnName: string) {
+		hoveredElement.set({ table: table.name, column: columnName });
+	}
+
+	function handleMouseLeave() {
+		hoveredElement.set({ table: null, column: null });
+	}
+	function handleOutsideClick() {
+		readOnly = false;
+		if ($isSelecting && !$hoveredElement) {
+			selectedElement.set(null); // Réinitialiser l'élément sélectionné
+			isSelecting.set(false); // Désactivez le mode de sélection
+		}
 	}
 </script>
 
 <main bind:this={elements[table.name]}>
 	<!-- <div class="block"> -->
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<SortableList list={sortedFields} {elements} tablename={table.name} on:sort={sortList} let:item let:index>
-		<span class="item name">
-			<Input type="text" value={item.name} layout="flex" readonly={!readOnly} />
-		</span>
-		<span class="item type">
-			<Dropdown {options} layout="auto" type={getType(item.type)} selected={item.type} bind:editable={readOnly} value={item.length} />
-		</span>
-		<span class="item isNull" class:null={item.defaultValue === "NULL"}>{item.defaultValue !== undefined ? item.defaultValue : ""}</span>
-		{#if item.index}
-			<span class:blue={item.index === 2} class="item key">{getIndex(item.index)}</span>
-		{/if}
-		{#if readOnly}
-			{#if !item.linked}
-				<span class="item link" on:click={() => addLink(`${table.name}-${item.name}`)}>
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="s-WdYVzRglSv5Z">
-						<path d="M16 17L22 11L16 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
-						<path d="M3.91164 19.3885C4.29807 17.7083 5.04197 16.1312 6.09271 14.7644C7.14345 13.3976 8.47636 12.2733 10.0007 11.468C11.525 10.6626 13.205 10.1952 14.9262 10.0975C16.6474 9.99977 18.3695 10.2741 19.9752 10.9017" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
-					</svg>
-				</span>
-			{:else}
-				<span class="item link" on:click={() => removeLink(`${table.name}-${item.name}`, item.id)}>
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
-						<line x1="18" y1="6" x2="6" y2="18"></line>
-						<line x1="6" y1="6" x2="18" y2="18"></line>
-					</svg>
-				</span>
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div class="line" on:click|stopPropagation={(event) => handleElementClick(event, `${table.name}-${item.name}`)} on:mouseenter={() => handleMouseEnter(item.name)} on:mouseleave={handleMouseLeave} class:selected={$isSelecting && `${table.name}-${item.name}` === $selectedElement} class:hovered={$isSelecting && $hoveredElement.column === item.name && $hoveredElement.table === table.name}>
+			<span class="item name">
+				<Input type="text" value={item.name} layout="flex" readonly={!readOnly} />
+			</span>
+			<span class="item type">
+				<Dropdown {options} layout="auto" type={getType(item.type)} selected={item.type} bind:editable={readOnly} value={item.length} />
+			</span>
+			<span class="item isNull" class:null={item.defaultValue === "NULL"}>{item.defaultValue !== undefined ? item.defaultValue : ""}</span>
+			{#if item.index}
+				<span class:blue={item.index === 2} class="item key">{getIndex(item.index)}</span>
 			{/if}
-		{/if}
+			{#if readOnly}
+				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				{#if !item.linked}
+					<!-- svelte-ignore a11y-click-events-have-key-events -->
+					<!-- svelte-ignore a11y-no-static-element-interactions -->
+					<span class="item link" on:click|stopPropagation={() => handleClick(`${table.name}-${item.name}`)}>
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="s-WdYVzRglSv5Z">
+							<path d="M16 17L22 11L16 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
+							<path d="M3.91164 19.3885C4.29807 17.7083 5.04197 16.1312 6.09271 14.7644C7.14345 13.3976 8.47636 12.2733 10.0007 11.468C11.525 10.6626 13.205 10.1952 14.9262 10.0975C16.6474 9.99977 18.3695 10.2741 19.9752 10.9017" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
+						</svg>
+					</span>
+				{:else}
+					<span class="item link" on:click={() => removeLink(`${table.name}-${item.name}`, item.id)}>
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
+					</span>
+				{/if}
+			{/if}
+		</div>
 	</SortableList>
 </main>
 {#if readOnly}
-<div class="group-buttons">
-	<button class="btn blue" on:click={() => addNewItem(index)}>Add item</button>
-	<button class="btn" on:click={() => deleteTable(index)}>Delete</button>
-</div>
+	<div class="group-buttons">
+		<button class="btn blue" on:click={() => addNewItem(index)}>Add item</button>
+		<button class="btn" on:click={() => deleteTable(index)}>Delete</button>
+	</div>
 {/if}
 
 <style lang="scss">
@@ -91,6 +123,23 @@
 		display: flex;
 		gap: 10px;
 		margin-top: 10px;
+	}
+	.line {
+		border-radius: 6px;
+		width: 100%;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 4px 8px;
+		gap: 8px;
+		height: 27px;
+		outline: 2px solid transparent;
+		&.selected {
+			outline-color: #1371ff;
+		}
+		&.hovered {
+			background: #34363d;
+		}
 	}
 	.btn {
 		color: #fff;
