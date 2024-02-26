@@ -71,7 +71,7 @@
 
 	function handleOutsideClick() {
 		readOnly = false;
-		if ($isSelecting && !$hoveredElement) {
+		if ($isSelecting) {
 			selectedElement.set(null); // Réinitialiser l'élément sélectionné
 			isSelecting.set(false); // Désactivez le mode de sélection
 		}

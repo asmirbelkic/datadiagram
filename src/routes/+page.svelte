@@ -7,22 +7,11 @@
 	import Window from "./Window.svelte";
 	import LeaderLine from "leader-line-new";
 	import Editor from "./Editor.svelte";
+
 	let lines: LeaderLine[] = [];
 	let elements: { [key: string]: HTMLElement } = {};
+	let cursorPos = { x: 0, y: 0 };
 	import { get } from "svelte/store";
-
-	let startPoint; // L'élément d'où part la ligne
-  let endPoint; // L'élément vers lequel la ligne pointe temporairement
-  let line = null; // Instance de LeaderLine
-  let isConnecting = false; // État indiquant si le mode de connexion est activé
-
-	onMount(() => {
-    document.addEventListener('mousemove', updateLinePosition);
-  });
-
-  onDestroy(() => {
-    document.removeEventListener('mousemove', updateLinePosition);
-  });
 
 	let data: Array<Table> = [];
 	cards.subscribe((value) => {
@@ -62,7 +51,9 @@
 	}
 
 	onMount(createLines);
-	// afterUpdate(createLines);
+	onDestroy(() => {
+		lines.forEach((line) => line.remove());
+	});
 
 	function createTable(event: CustomEvent<{ index: number }>) {
 		let index = event.detail.index;
@@ -91,6 +82,19 @@
 		});
 	}
 
+	let tempLine: LeaderLine | null = null;
+	let mousePoint: HTMLElement;
+
+	function startCreatingRelation(fromElement: HTMLElement) {
+		console.log(mousePoint.id);
+
+    // tempLine = new LeaderLine(fromElement, mousePoint, {
+    //   startPlug: 'disc',
+    //   endPlug: 'disc',
+    //   dash: { animation: true },
+    // });
+  }
+
 	// Exemple d'utilisation dans une fonction de clic
 	export function handleElementClick(event: Event, elementId: string) {
 		event.stopPropagation();
@@ -114,13 +118,24 @@
 		}
 		createLines();
 	}
+// Mettre à jour la position de mousePoint et tempLine à chaque mouvement de la souris
+function handleMouseMove(e: MouseEvent) {
+    cursorPos = { x: e.clientX, y: e.clientY };
+    if (mousePoint) {
+      mousePoint.style.left = `${cursorPos.x}px`;
+      mousePoint.style.top = `${cursorPos.y}px`;
+    }
+    if (tempLine) {
+      tempLine.position();
+    }
+  }
 </script>
 
 <main class="wrapper">
 	<Editor>
 		{#each data as table, i}
 			<Window bind:name={table.name} bind:position={table.position} bind:readOnly={table.readOnly} {handleElementClick}>
-				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} on:removeLink={onLinkRemove} {handleElementClick}/>
+				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} on:removeLink={onLinkRemove} {handleElementClick} {startCreatingRelation}/>
 			</Window>
 		{/each}
 	</Editor>
@@ -130,7 +145,9 @@
 	</p>
 	<pre>{JSON.stringify($relations, null, 2)}</pre>
 </main>
+<svelte:window on:mousemove={handleMouseMove}></svelte:window>
 
+<div bind:this={mousePoint} id="mouse-point" style="position: absolute; display: none; left: {cursorPos.x}px; top: {cursorPos.y}px; width: 5px; height: 5px;"></div>
 <style lang="scss">
 	p {
 		color: white

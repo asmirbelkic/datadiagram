@@ -8,12 +8,13 @@
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
 	export let handleElementClick: (event: Event, name: string) => void; // Fonction pour gérer le clic sur l'élément
-
+	export let startCreatingRelation: (from: HTMLElement) => void;
 	import Input from "./Input.svelte";
 	import Dropdown from "./Dropdown.svelte";
 
 	export let index: number;
 	export let table: Table;
+	let self: HTMLElement;
 	export let elements: { [key: string]: HTMLElement } = {};
 	export let readOnly: boolean = false;
 	function getType(columnType: keyof typeof types): string {
@@ -49,6 +50,7 @@
 	function handleClick(name: string) {
 		$isSelecting = !$isSelecting;
 		if ($isSelecting) {
+			startCreatingRelation(self);
 			selectedElement.set(name);
 		} else {
 			selectedElement.set(null);
@@ -76,7 +78,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<SortableList list={sortedFields} {elements} tablename={table.name} on:sort={sortList} let:item let:index>
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div class="line" on:click|stopPropagation={(event) => handleElementClick(event, `${table.name}-${item.name}`)} on:mouseenter={() => handleMouseEnter(item.name)} on:mouseleave={handleMouseLeave} class:selected={$isSelecting && `${table.name}-${item.name}` === $selectedElement} class:hovered={$isSelecting && $hoveredElement.column === item.name && $hoveredElement.table === table.name}>
+		<div class="line" bind:this={self} on:click|stopPropagation={(event) => handleElementClick(event, `${table.name}-${item.name}`)} on:mouseenter={() => handleMouseEnter(item.name)} on:mouseleave={handleMouseLeave} class:selected={$isSelecting && `${table.name}-${item.name}` === $selectedElement} class:hovered={$isSelecting && $hoveredElement.column === item.name && $hoveredElement.table === table.name}>
 			<span class="item name">
 				<Input type="text" value={item.name} layout="flex" readonly={!readOnly} />
 			</span>
