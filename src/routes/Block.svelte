@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { get } from "svelte/store";
 	import { types } from "$lib/state";
 	import type { Table } from "$lib/state";
 	import { isSelecting, hoveredElement, selectedElement } from "$lib/state";
@@ -7,15 +6,15 @@
 	import SortableList from "./SortableList.svelte";
 	import { createEventDispatcher } from "svelte";
 	const dispatch = createEventDispatcher();
-	export let handleElementClick: (event: Event, name: string) => void; // Fonction pour gérer le clic sur l'élément
+	export let handleElementClick: (event: Event, fromName: string, node?: HTMLElement, fromId?: number) => void; // Fonction pour gérer le clic sur l'élément
 	export let startCreatingRelation: (from: HTMLElement) => void;
 	import Input from "./Input.svelte";
 	import Dropdown from "./Dropdown.svelte";
-
+	export let line:any;
 	export let index: number;
 	export let table: Table;
-	let self: HTMLElement;
 	export let elements: { [key: string]: HTMLElement } = {};
+
 	export let readOnly: boolean = false;
 	function getType(columnType: keyof typeof types): string {
 		return types[columnType] || columnType;
@@ -43,17 +42,26 @@
 		sortedFields = event.detail;
 	}
 
-	function removeLink(name: string, id: number) {
-		dispatch("removeLink", { name, id });
+	function removeLink(table: string, column: string, id: number) {
+		dispatch("removeLink", { table, column, id });
 	}
 
-	function handleClick(name: string) {
-		$isSelecting = !$isSelecting;
-		if ($isSelecting) {
-			startCreatingRelation(self);
-			selectedElement.set(name);
+	function handleClick(name: string, id: number) {
+		$isSelecting = !$isSelecting
+		if($isSelecting) {
+			selectedElement.set({ name, element: elements[name], id, table: table.name, column: name });
+
+			startCreatingRelation(elements[name]);
 		} else {
-			selectedElement.set(null);
+			selectedElement.set({
+				name: name,
+				element: elements[name],
+				id: id,
+				table: table.name,
+			});
+		}
+		if (line) {
+			line.remove();
 		}
 	}
 
@@ -64,21 +72,29 @@
 	function handleMouseLeave() {
 		hoveredElement.set({ table: null, column: null });
 	}
-	function handleOutsideClick() {
-		readOnly = false;
-		if ($isSelecting && !$hoveredElement) {
-			selectedElement.set(null); // Réinitialiser l'élément sélectionné
-			isSelecting.set(false); // Désactivez le mode de sélection
-		}
-	}
+
+	// function handleOutsideClick() {
+	// 	readOnly = false;
+	// 	if ($isSelecting && !$hoveredElement) {
+	// 		selectedElement.set(null); // Réinitialiser l'élément sélectionné
+	// 		isSelecting.set(false); // Désactivez le mode de sélection
+	// 	}
+	// }
 </script>
 
 <main bind:this={elements[table.name]}>
-	<!-- <div class="block"> -->
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<SortableList list={sortedFields} {elements} tablename={table.name} on:sort={sortList} let:item let:index>
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div class="line" bind:this={self} on:click|stopPropagation={(event) => handleElementClick(event, `${table.name}-${item.name}`)} on:mouseenter={() => handleMouseEnter(item.name)} on:mouseleave={handleMouseLeave} class:selected={$isSelecting && `${table.name}-${item.name}` === $selectedElement} class:hovered={$isSelecting && $hoveredElement.column === item.name && $hoveredElement.table === table.name}>
+		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+		<div
+			class="line"
+			role="main"
+			on:keypress={() => {}}
+			on:click={(event) => handleElementClick(event, `${table.name}-${item.name}`, elements[`${table.name}-${item.name}`], item.id)}
+			on:mouseenter={() => handleMouseEnter(item.name)}
+			on:mouseleave={handleMouseLeave}
+			class:selected={$isSelecting && `${table.name}-${item.name}` === $selectedElement.name}
+			class:hovered={$isSelecting && $hoveredElement.column === item.name && $hoveredElement.table === table.name}
+		>
 			<span class="item name">
 				<Input type="text" value={item.name} layout="flex" readonly={!readOnly} />
 			</span>
@@ -90,24 +106,20 @@
 				<span class:blue={item.index === 2} class="item key">{getIndex(item.index)}</span>
 			{/if}
 			{#if readOnly}
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				{#if !item.linked}
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<span class="item link" on:click|stopPropagation={() => handleClick(`${table.name}-${item.name}`)}>
+					<button class="item link" on:click|stopPropagation={() => handleClick(`${table.name}-${item.name}`, item.id)}>
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="s-WdYVzRglSv5Z">
 							<path d="M16 17L22 11L16 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
 							<path d="M3.91164 19.3885C4.29807 17.7083 5.04197 16.1312 6.09271 14.7644C7.14345 13.3976 8.47636 12.2733 10.0007 11.468C11.525 10.6626 13.205 10.1952 14.9262 10.0975C16.6474 9.99977 18.3695 10.2741 19.9752 10.9017" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="s-WdYVzRglSv5Z"></path>
 						</svg>
-					</span>
+					</button>
 				{:else}
-					<span class="item link" on:click={() => removeLink(`${table.name}-${item.name}`, item.id)}>
+					<button class="item link" on:click={() => removeLink( table.name, item.name, item.id)}>
 						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
 							<line x1="18" y1="6" x2="6" y2="18"></line>
 							<line x1="6" y1="6" x2="18" y2="18"></line>
 						</svg>
-					</span>
+					</button>
 				{/if}
 			{/if}
 		</div>
@@ -124,7 +136,7 @@
 	.group-buttons {
 		display: flex;
 		gap: 10px;
-		margin-top: 10px;
+		padding-top: 10px;
 	}
 	.line {
 		border-radius: 6px;
@@ -140,7 +152,7 @@
 			outline-color: #1371ff;
 		}
 		&.hovered {
-			background: #34363d;
+			background: rgba(255, 255, 255, 0.07);
 		}
 	}
 	.btn {
@@ -185,6 +197,8 @@
 		font-weight: 300;
 		font-size: 14px;
 		line-height: 17px;
+		border: 0;
+		padding: 0;
 		color: #ffffff;
 		flex: none;
 		flex-grow: 0;

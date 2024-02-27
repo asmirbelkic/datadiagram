@@ -16,3 +16,19 @@ export function clickOutside(
     },
   };
 }
+
+export function quitOnEscape(node: HTMLElement, handler: () => void) {
+	const onKeydown = (event: KeyboardEvent) => {
+		if (event.key === 'Escape') {
+			handler();
+		}
+	};
+
+	node.addEventListener('keydown', onKeydown);
+
+	return {
+		destroy() {
+			node.removeEventListener('keydown', onKeydown);
+		},
+	};
+}

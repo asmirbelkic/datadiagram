@@ -1,3 +1,4 @@
+import LeaderLine from "leader-line-new";
 import { writable, type Writable } from "svelte/store";
 export const focusedBlock = writable<string | null>(null);
 
@@ -40,6 +41,7 @@ export interface Table {
 }
 
 export interface relation {
+	id: number | null;
 	from: string;
 	to: string;
 }
@@ -57,15 +59,15 @@ export const types = {
 };
 
 export const relations = writable<Array<relation>>([
-	{ from: "user-id", to: "like-user_id" },
-	{ from: "post-id", to: "like" },
+	{ id: null, from: "user-id", to: "like-user_id" },
+	{ id: null, from: "post-id", to: "like" },
 ]);
 
 export const cards = writable<Array<Table>>([
 	{
 		name: "user",
 		fields: [
-			{ id:0, name: "id", type: "int", index: 1, linked: true},
+			{ id:1, name: "id", type: "int", index: 1, linked: true},
 			{ id:2, name: "username", type: "varchar", length: 50 },
 			{ id:3, name: "email", type: "varchar", length: 250 },
 			{ id:4, name: "phone", type: "varchar", length: 250, index: 1, defaultValue: "NULL" },
@@ -96,6 +98,22 @@ export const cards = writable<Array<Table>>([
 
 export let isSelecting = writable(false);
 // Is selection true or false and what is the type of the selection (table or column)
-export let selectedElement = writable<null | string>(null);
+// export let selectedElement = writable<null | string>(null);
+export let selectedElement = writable<{
+	element?: HTMLElement | null;
+	id?: number | null;
+	name: string | null;
+	table?: string | null;
+	column?: string | null;
+}>(
+	{
+		element: null,
+		id: null,
+		name: null,
+		table: null,
+		column: null,
+	}
+)
 // export let hoveredElement = writable<null | string>(null);
 export const hoveredElement = writable<{ table: string | null; column: string | null }>({ table: null, column: null });
+export const tempLine = writable<LeaderLine | null>(null);

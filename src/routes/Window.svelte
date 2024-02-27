@@ -7,7 +7,9 @@
 	export let readOnly: boolean | null = false;
 	import Input from "./Input.svelte";
 	let moving: boolean = false;
+	import LeaderLine from "leader-line-new";
 	let mainElement: HTMLElement;
+	export const lines: LeaderLine[] = [];
 	let editName: boolean = false;
 	let x: number = 0,
 		y: number = 0;
@@ -51,12 +53,22 @@
 	function handleClick() {
 		$isSelecting = !$isSelecting
 		if($isSelecting) {
-			selectedElement.set(name);
+			selectedElement.set({
+				name: name,
+				element: null,
+				id: null,
+				table: name
+			});
 		} else {
-			selectedElement.set(null);
+			selectedElement.set({
+				name: null,
+				element: null,
+				id: null
+			});
 		}
 	}
 
+	let selectedFullName = $selectedElement.table
 	function toggleReadOnly() {
 		if (!editName) readOnly = !readOnly;
 	}
@@ -70,19 +82,37 @@
 	}
 
 	function handleOutsideClick() {
-		readOnly = false;
-		if ($isSelecting) {
-			selectedElement.set(null); // Réinitialiser l'élément sélectionné
-			isSelecting.set(false); // Désactivez le mode de sélection
+		if(!$isSelecting) {
+			readOnly = false;
 		}
+		if($isSelecting && !$hoveredElement.table) {
+			selectedElement.set(
+				{
+					name: null,
+					element: null,
+					id: null
+				}
+				); // Réinitialiser l'élément sélectionné
+				$isSelecting = false; // Désactivez le mode de sélection
+				const lastTempLine = lines.pop(); // Supprime et récupère la dernière ligne temporaire
+				if (lastTempLine) {
+					lastTempLine.remove(); // Supprime la dernière ligne temporaire
+				}
+			}
+
+			// if ($isSelecting) {
+				// 	selectedElement.set(null); // Réinitialiser l'élément sélectionné
+		// 	isSelecting.set(false); // Désactivez le mode de sélection
+		// }
 	}
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-<!-- <main bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:selected={name === $selectedElement} class:unhovered={$isSelecting && name === $selectedElement} class:hovered={$isSelecting && $hoveredElement.table === name && $selectedElement !== name} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
-<main bind:this={mainElement} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
+<!-- <main  bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:selected={name === selectedFullName} class:unhovered={$isSelecting && name === selectedFullName} class:hovered={$isSelecting && $hoveredElement.table === name && selectedFullName !== name} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
+<main  bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
+<!-- <main bind:this={mainElement} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
 	<header>
 		<h5 on:dblclick={() => (editName = true)}>
 			{#if readOnly}
@@ -95,16 +125,16 @@
 			{/if}
 		</h5>
 		{#if editName}
-			<span
+			<button
 				class="btn"
 				on:click={() => {
 					editName = false;
 				}}
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
-			</span>
+			</button>
 		{/if}
-		<span class="btn grab" on:mousedown|stopPropagation={onMouseDown}>
+		<button class="btn grab" on:mousedown|stopPropagation={onMouseDown}>
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-move">
 				<polyline points="5 9 2 12 5 15"></polyline>
 				<polyline points="9 5 12 2 15 5"></polyline>
@@ -113,7 +143,7 @@
 				<line x1="2" y1="12" x2="22" y2="12"></line>
 				<line x1="12" y1="2" x2="12" y2="22"></line>
 			</svg>
-		</span>
+		</button>
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<span class="btn" on:click|stopPropagation={toggleReadOnly}>
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3">
@@ -141,8 +171,8 @@
 		display: flex;
 		flex-direction: column;
 		transition: transform 0.12s ease;
-		border-radius: 12px;
-		outline-offset: 4px;
+		border-radius: 6px;
+		outline-offset: 6px;
 		outline: 2px solid transparent;
 		&.selected {
 			outline-color: #00b894;
@@ -189,6 +219,8 @@
 				display: flex;
 				align-items: center;
 				justify-content: center;
+				border: 0;
+				padding: 0;
 				border-radius: 6px;
 				background: #3e4147;
 				width: 18px;
