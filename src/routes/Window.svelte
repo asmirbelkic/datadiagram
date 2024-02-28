@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { positions, isSelecting, hoveredElement, selectedElement } from "$lib/state";
+	import { positions, isSelecting, hoveredElement, selectedElement, tempLine } from "$lib/state";
 	import { clickOutside } from "$lib/util";
-	export let handleElementClick: (event:Event, name: string) => void; // Fonction pour gérer le clic sur l'élément
+	export let handleElementClick: (event: Event, name: string) => void; // Fonction pour gérer le clic sur l'élément
 	export let name: string;
 	export let position: [number, number] = [0, 0];
+	export let cancelRelationCreation: (readOnly: boolean) => void;
+
 	export let readOnly: boolean | null = false;
 	import Input from "./Input.svelte";
 	let moving: boolean = false;
@@ -43,6 +45,7 @@
 			positions.update((currentPositions) => {
 				const updatedPositions = { ...currentPositions };
 				updatedPositions[name] = { left: x, top: y };
+
 				return updatedPositions;
 			});
 
@@ -51,24 +54,24 @@
 	};
 
 	function handleClick() {
-		$isSelecting = !$isSelecting
-		if($isSelecting) {
+		$isSelecting = !$isSelecting;
+		if ($isSelecting) {
 			selectedElement.set({
 				name: name,
 				element: null,
 				id: null,
-				table: name
+				table: name,
 			});
 		} else {
 			selectedElement.set({
 				name: null,
 				element: null,
-				id: null
+				id: null,
 			});
 		}
 	}
 
-	let selectedFullName = $selectedElement.table
+	let selectedFullName = $selectedElement.table;
 	function toggleReadOnly() {
 		if (!editName) readOnly = !readOnly;
 	}
@@ -78,32 +81,15 @@
 	}
 
 	function handleMouseLeave() {
-    hoveredElement.set({ table: null, column: null });
+		hoveredElement.set({ table: null, column: null });
 	}
 
 	function handleOutsideClick() {
-		if(!$isSelecting) {
+		if (!$isSelecting) {
 			readOnly = false;
+			editName = false;
 		}
-		if($isSelecting && !$hoveredElement.table) {
-			selectedElement.set(
-				{
-					name: null,
-					element: null,
-					id: null
-				}
-				); // Réinitialiser l'élément sélectionné
-				$isSelecting = false; // Désactivez le mode de sélection
-				const lastTempLine = lines.pop(); // Supprime et récupère la dernière ligne temporaire
-				if (lastTempLine) {
-					lastTempLine.remove(); // Supprime la dernière ligne temporaire
-				}
-			}
-
-			// if ($isSelecting) {
-				// 	selectedElement.set(null); // Réinitialiser l'élément sélectionné
-		// 	isSelecting.set(false); // Désactivez le mode de sélection
-		// }
+		cancelRelationCreation(readOnly || false);
 	}
 </script>
 
@@ -111,8 +97,8 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <!-- svelte-ignore a11y-mouse-events-have-key-events -->
 <!-- <main  bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:selected={name === selectedFullName} class:unhovered={$isSelecting && name === selectedFullName} class:hovered={$isSelecting && $hoveredElement.table === name && selectedFullName !== name} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
-<main  bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
-<!-- <main bind:this={mainElement} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
+<main bind:this={mainElement} on:click|stopPropagation={(event) => handleElementClick(event, name)} on:mouseenter={handleMouseEnter} on:mouseleave={handleMouseLeave} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}>
+	<!-- <main bind:this={mainElement} class:grabbing={moving} class="outer" style="left: {position[0]}px; top: {position[1]}px; {grabbinStyle}" use:clickOutside={handleOutsideClick}> -->
 	<header>
 		<h5 on:dblclick={() => (editName = true)}>
 			{#if readOnly}
@@ -134,7 +120,7 @@
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>
 			</button>
 		{/if}
-		<button class="btn grab" on:mousedown|stopPropagation={onMouseDown}>
+		<button class="btn grab" on:mousedown|stopPropagation={onMouseDown} disabled={$isSelecting}>
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-move">
 				<polyline points="5 9 2 12 5 15"></polyline>
 				<polyline points="9 5 12 2 15 5"></polyline>

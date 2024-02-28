@@ -2,11 +2,10 @@ import LeaderLine from "leader-line-new";
 import { writable, type Writable } from "svelte/store";
 export const focusedBlock = writable<string | null>(null);
 
-
 interface Editor {
-  width: number;
-  height: number;
-  element?: HTMLElement; // Ajoutez cette ligne pour stocker l'élément
+	width: number;
+	height: number;
+	element?: HTMLElement; // Ajoutez cette ligne pour stocker l'élément
 }
 
 // Initialisez le store avec un objet vide respectant l'interface, ou null si vous préférez.
@@ -14,10 +13,10 @@ export const editor = writable<Editor>({ width: 0, height: 0 });
 
 // Définir un type pour les positions qui accepte des clés dynamiques de type string
 export interface Positions {
-  [key: string]: {
-    left: number;
-    top: number;
-  };
+	[key: string]: {
+		left: number;
+		top: number;
+	};
 }
 
 export const positions = writable<Positions>({});
@@ -67,32 +66,32 @@ export const cards = writable<Array<Table>>([
 	{
 		name: "user",
 		fields: [
-			{ id:1, name: "id", type: "int", index: 1, linked: true},
-			{ id:2, name: "username", type: "varchar", length: 50 },
-			{ id:3, name: "email", type: "varchar", length: 250 },
-			{ id:4, name: "phone", type: "varchar", length: 250, index: 1, defaultValue: "NULL" },
-			{ id:5, name: "created_at", type: "timestamp" },
+			{ id: 1, name: "id", type: "int", index: 1, linked: true },
+			{ id: 2, name: "username", type: "varchar", length: 50 },
+			{ id: 3, name: "email", type: "varchar", length: 250 },
+			{ id: 4, name: "phone", type: "varchar", length: 250, index: 1, defaultValue: "NULL" },
+			{ id: 5, name: "created_at", type: "timestamp" },
 		],
 		position: [0, 0],
 	},
 	{
 		name: "like",
 		fields: [
-			{ id:1,name: "user_id", type: "int", index: 2 },
-			{ id:2,name: "post_id", type: "int", index: 2 },
-			{ id:3,name: "created_at", type: "timestamp" },
+			{ id: 1, name: "user_id", type: "int", index: 2 },
+			{ id: 2, name: "post_id", type: "int", index: 2 },
+			{ id: 3, name: "created_at", type: "timestamp" },
 		],
-		position: [450, 150],
+		position: [300, 300],
 	},
 	{
 		name: "post",
 		fields: [
-			{ id: 1, name: "id", type: "int", index: 1, linked: true},
+			{ id: 1, name: "id", type: "int", index: 1, linked: true },
 			{ id: 2, name: "title", type: "varchar", length: 50 },
 			{ id: 3, name: "content", type: "text" },
 			{ id: 4, name: "created_at", type: "timestamp" },
 		],
-		position: [900, 280],
+		position: [600, 600],
 	},
 ]);
 
@@ -105,15 +104,13 @@ export let selectedElement = writable<{
 	name: string | null;
 	table?: string | null;
 	column?: string | null;
-}>(
-	{
-		element: null,
-		id: null,
-		name: null,
-		table: null,
-		column: null,
-	}
-)
+}>({
+	element: null,
+	id: null,
+	name: null,
+	table: null,
+	column: null,
+});
 // export let hoveredElement = writable<null | string>(null);
 export const hoveredElement = writable<{ table: string | null; column: string | null }>({ table: null, column: null });
 export const tempLine = writable<LeaderLine | null>(null);

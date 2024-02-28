@@ -13,17 +13,15 @@
 	let cursorPos = { x: 0, y: 0 };
 	import { get } from "svelte/store";
 
-	let tempLine: LeaderLine | null;
+	let tempLine: LeaderLine | null = null;
 	let mousePoint: HTMLElement;
 	let data: Array<Table> = [];
 	cards.subscribe((value) => {
 		data = value;
 	});
 
-	positions.subscribe(() => {
-		if (lines.length > 0) {
-			updateLines();
-		}
+	positions.subscribe((currentTable) => {
+		lines.forEach((line) => line.position());
 	});
 
 	const createLines = (): void => {
@@ -49,10 +47,6 @@
 		});
 	};
 
-	function updateLines() {
-		lines.forEach((line) => line.position());
-	}
-
 	onMount(() => {
 		createLines();
 	});
@@ -60,6 +54,16 @@
 		tempLine?.remove();
 		lines.forEach((line) => line.remove());
 	});
+
+	// function pour cancel la création de relation
+	function cancelCreatingRelation() {
+		if ($isSelecting && tempLine) {
+			tempLine.remove();
+			tempLine = null;
+			isSelecting.set(false);
+			selectedElement.set({ name: "", element: null, id: null });
+		}
+	}
 
 	function createTable(event: CustomEvent<{ index: number }>) {
 		let index = event.detail.index;
@@ -109,7 +113,7 @@
 	}
 
 	function startCreatingRelation(fromElement: HTMLElement) {
-		if(!fromElement) return;
+		if (!fromElement) return;
 		tempLine = new LeaderLine(fromElement, mousePoint, {
 			startPlug: "disc",
 			path: "magnet",
@@ -137,7 +141,8 @@
 	// Exemple d'utilisation dans une fonction de clic
 	export function handleElementClick(event: Event, fromName: string, node?: HTMLElement, fromId?: number) {
 		event.stopPropagation();
-
+		if (!tempLine) return;
+		if (!node) return;
 		console.log($selectedElement.table === fromName);
 		console.log($selectedElement.id === fromId);
 
@@ -168,7 +173,7 @@
 			return;
 		}
 
-		if (currentSelected && tempLine && node) {
+		if (currentSelected) {
 			console.log(tempLine);
 
 			const fromTableName = currentSelected.table;
@@ -198,7 +203,6 @@
 			});
 			selectedElement.set({ id: null, name: null });
 			isSelecting.set(false);
-			tempLine.remove();
 		} else {
 			selectedElement.set({
 				name: fromName,
@@ -207,6 +211,7 @@
 				table: fromName,
 			});
 		}
+		tempLine?.remove();
 	}
 
 	// Fonction pour mettre à jour le champ avec `linked: true`
@@ -236,39 +241,50 @@
 		}
 	}
 
-	function handleClick() {
-		console.log("click");
+	function cancelRelationCreation(readOnly: boolean) {
+		const hovered = get(hoveredElement).table;
+		const selected = get(selectedElement).table;
 
-		if (tempLine && !$selectedElement.table) {
-			try {
+		// Vérifier s'il y a une tempLine et si l'on est en mode sélection
+		if (tempLine && $isSelecting) {
+			// Si ni hovered ni selected ne sont présents, annuler la création de relation
+			if (!selected || !hovered) {
+				selectedElement.set({ id: null, name: null });
+				isSelecting.set(false);
 				tempLine.remove();
-			} catch (error) {
-				console.error("Erreur lors de la suppression de tempLine:", error);
+				readOnly = false;
+				tempLine = null;
 			}
-			isSelecting.set(false);
-			tempLine = null; // Réinitialise tempLine
 		}
 	}
-
 </script>
 
 <main class="wrapper">
 	<Editor>
 		{#each data as table, i}
-			<Window bind:name={table.name} bind:position={table.position} bind:readOnly={table.readOnly} {handleElementClick}>
-				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} on:removeLink={onLinkRemove} {handleElementClick} {startCreatingRelation} bind:line={tempLine} />
+			<Window bind:name={table.name} bind:position={table.position} bind:readOnly={table.readOnly} {handleElementClick} {cancelRelationCreation}>
+				<Block {table} {elements} readOnly={table.readOnly || false} index={i} on:create={createTable} on:delete={deleteTable} on:removeLink={onLinkRemove} {handleElementClick} {startCreatingRelation} />
 			</Window>
 		{/each}
 	</Editor>
-	<span class="debug">
-		<p>{JSON.stringify($selectedElement.table)} <br> {JSON.stringify($selectedElement.column)}</p>
+	<!-- <span class="debug">
+		<p>
+			{JSON.stringify($selectedElement.table)}
+			<br />
+			{JSON.stringify($selectedElement.column)}
+		</p>
 		<p>{JSON.stringify($hoveredElement)}</p>
 	</span>
 	<div id="debug">
 		<pre>{JSON.stringify($relations, null, 2)}</pre>
-	</div>
+	</div> -->
 </main>
-<svelte:window on:mousemove={handleMouseMove} on:click={handleClick} />
+<svelte:window
+	on:mousemove={handleMouseMove}
+	on:keydown={(e) => {
+		if (e.key === "Escape") cancelCreatingRelation();
+	}}
+/>
 
 <div bind:this={mousePoint} id="mouse-point" style="left: {cursorPos.x}px; top: {cursorPos.y}px; visibility: {$isSelecting ? 'visible' : 'hidden'}"></div>
 

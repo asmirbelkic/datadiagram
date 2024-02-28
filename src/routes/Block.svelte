@@ -10,7 +10,6 @@
 	export let startCreatingRelation: (from: HTMLElement) => void;
 	import Input from "./Input.svelte";
 	import Dropdown from "./Dropdown.svelte";
-	export let line:any;
 	export let index: number;
 	export let table: Table;
 	export let elements: { [key: string]: HTMLElement } = {};
@@ -60,9 +59,6 @@
 				table: table.name,
 			});
 		}
-		if (line) {
-			line.remove();
-		}
 	}
 
 	function handleMouseEnter(columnName: string) {
@@ -72,14 +68,6 @@
 	function handleMouseLeave() {
 		hoveredElement.set({ table: null, column: null });
 	}
-
-	// function handleOutsideClick() {
-	// 	readOnly = false;
-	// 	if ($isSelecting && !$hoveredElement) {
-	// 		selectedElement.set(null); // Réinitialiser l'élément sélectionné
-	// 		isSelecting.set(false); // Désactivez le mode de sélection
-	// 	}
-	// }
 </script>
 
 <main bind:this={elements[table.name]}>
@@ -127,7 +115,7 @@
 </main>
 {#if readOnly}
 	<div class="group-buttons">
-		<button class="btn blue" on:click={() => addNewItem(index)}>Add item</button>
+		<button class="btn blue" on:click|self={() => addNewItem(index)}>Add item</button>
 		<button class="btn" on:click={() => deleteTable(index)}>Delete</button>
 	</div>
 {/if}

@@ -152,7 +152,7 @@
 			display: flex;
 			flex-direction: row;
 			align-items: center;
-			padding: 10px 16px;
+			padding: 6px 14px;
 			border-radius: 6px;
 			gap: 10px;
 
