@@ -116,8 +116,8 @@
 
 {#if readOnly}
 	<div class="group-buttons">
-		<button class="btn blue" on:click|self={() => addNewItem(index)}>Add item</button>
-		<button class="btn" on:click={() => deleteTable(index)}>Delete</button>
+		<button disabled={$isSelecting} class="btn blue" on:click|self={() => addNewItem(index)}>Add item</button>
+		<button disabled={$isSelecting} class="btn" on:click={() => deleteTable(index)}>Delete</button>
 	</div>
 {/if}
 

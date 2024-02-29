@@ -1,29 +1,21 @@
 <script lang="ts">
 	import type { Table } from "$lib/state";
+	import { get } from "svelte/store";
 	import { positions, hoveredElement, selectedElement, isSelecting } from "$lib/state";
 	import { onMount, onDestroy } from "svelte";
 	import { cards, relations } from "$lib/state";
 	import Block from "./Block.svelte";
 	import Window from "./Window.svelte";
 	import Editor from "./Editor.svelte";
+
 	let LeaderLine: any = null;
-
-
 	let lines: Map<number, LeaderLine> = new Map<number, LeaderLine>();
 	let elements: { [key: string]: HTMLElement } = {};
 	let cursorPos = { x: 0, y: 0 };
-	import { get } from "svelte/store";
 
 	let tempLine: LeaderLine | null = null;
 	let mousePoint: HTMLElement;
 	let data: Array<Table> = [];
-	cards.subscribe((value) => {
-		data = value;
-	});
-
-	positions.subscribe((currentTable) => {
-		lines.forEach((line) => line.position());
-	});
 
 	// function pour cancel la création de relation
 	function cancelCreatingRelation() {
@@ -260,6 +252,14 @@
 	onDestroy(() => {
 		tempLine?.remove();
 		lines.forEach((line) => line.remove());
+	});
+
+	cards.subscribe((value) => {
+		data = value;
+	});
+
+	positions.subscribe(() => {
+		lines.forEach((line) => line.position());
 	});
 </script>
 

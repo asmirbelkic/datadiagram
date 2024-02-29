@@ -15,7 +15,7 @@
 	let x: number = 0,
 		y: number = 0;
 
-	$: grabbinStyle = moving ? `transform: scale(1.03) rotate(${parseFloat((Math.random() * (3 - -3) + -3).toString()).toFixed(2)}deg)` : "";
+	$: grabbinStyle = moving ? `transform: rotate(${parseFloat((Math.random() * (3 - -3) + -3).toString()).toFixed(2)}deg)` : "";
 	const onMouseDown = (event: MouseEvent) => {
 		moving = true;
 
@@ -28,10 +28,6 @@
 		if (moving) {
 			let dx = event.clientX - x;
 			let dy = event.clientY - y;
-
-			const scaleFactor = 1.01;
-			dx /= scaleFactor;
-			dy /= scaleFactor;
 			// mainElement.style.top = mainElement.offsetTop + dy + "px";
 			// mainElement.style.left = mainElement.offsetLeft + dx + "px";
 
