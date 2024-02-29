@@ -9,7 +9,6 @@
 	export let readOnly: boolean | null = false;
 	import Input from "./Input.svelte";
 	let moving: boolean = false;
-	import LeaderLine from "leader-line-new";
 	let mainElement: HTMLElement;
 	export const lines: LeaderLine[] = [];
 	let editName: boolean = false;

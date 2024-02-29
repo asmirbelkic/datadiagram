@@ -5,10 +5,11 @@
 	import { cards, relations } from "$lib/state";
 	import Block from "./Block.svelte";
 	import Window from "./Window.svelte";
-	import LeaderLine from "leader-line-new";
 	import Editor from "./Editor.svelte";
+	let LeaderLine: any = null;
 
-	let lines: LeaderLine[] = [];
+
+	let lines: Map<number, LeaderLine> = new Map<number, LeaderLine>();
 	let elements: { [key: string]: HTMLElement } = {};
 	let cursorPos = { x: 0, y: 0 };
 	import { get } from "svelte/store";
@@ -23,6 +24,16 @@
 	positions.subscribe((currentTable) => {
 		lines.forEach((line) => line.position());
 	});
+
+	// function pour cancel la création de relation
+	function cancelCreatingRelation() {
+		if ($isSelecting && tempLine) {
+			tempLine.remove();
+			tempLine = null;
+			isSelecting.set(false);
+			selectedElement.set({ name: "", element: null, id: null });
+		}
+	}
 
 	const createLines = (): void => {
 		relations.update(($relations) => {
@@ -39,31 +50,13 @@
 						endPlug: "arrow3",
 						dash: { length: 4, gap: 4 },
 					});
-					lines.push(line);
 					relation.id = parseInt(line._id);
+					lines.set(relation.id, line);
 				}
 			});
 			return $relations;
 		});
 	};
-
-	onMount(() => {
-		createLines();
-	});
-	onDestroy(() => {
-		tempLine?.remove();
-		lines.forEach((line) => line.remove());
-	});
-
-	// function pour cancel la création de relation
-	function cancelCreatingRelation() {
-		if ($isSelecting && tempLine) {
-			tempLine.remove();
-			tempLine = null;
-			isSelecting.set(false);
-			selectedElement.set({ name: "", element: null, id: null });
-		}
-	}
 
 	function createTable(event: CustomEvent<{ index: number }>) {
 		let index = event.detail.index;
@@ -87,13 +80,13 @@
 		const name = `${table}-${column}`;
 		let relation = $relations.find((relation) => relation.from === name || relation.to === name);
 
-		if (relation) {
-			const line = lines.filter((line) => relation && parseInt(line._id) === relation.id)[0];
-			lines.splice(lines.indexOf(line), 1);
+		if (relation && relation.id !== null) {
 
-			// Ajoute une vérification supplémentaire ici
+			const line = lines.get(relation.id);
+			if(!line) return;
+
 			line.remove();
-
+			lines.delete(relation.id);
 			relations.update((currentRelations) => {
 				const updatedRelations = currentRelations.filter((relation) => relation.from !== name && relation.to !== name);
 				return updatedRelations;
@@ -134,7 +127,7 @@
 			endPlug: "arrow3",
 			dash: { length: 4, gap: 4 },
 		});
-		lines.push(line);
+		lines.set(parseInt(line._id), line);
 		return parseInt(line._id);
 	};
 
@@ -257,6 +250,17 @@
 			}
 		}
 	}
+
+	onMount(async () => {
+		const module = await import("leader-line-new");
+		LeaderLine = module.default;
+		createLines();
+	});
+
+	onDestroy(() => {
+		tempLine?.remove();
+		lines.forEach((line) => line.remove());
+	});
 </script>
 
 <main class="wrapper">

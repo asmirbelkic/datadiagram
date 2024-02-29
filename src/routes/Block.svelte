@@ -113,6 +113,7 @@
 		</div>
 	</SortableList>
 </main>
+
 {#if readOnly}
 	<div class="group-buttons">
 		<button class="btn blue" on:click|self={() => addNewItem(index)}>Add item</button>
@@ -174,9 +175,6 @@
 		width: 400px;
 		border-radius: 10px;
 		border: 2px solid #363841;
-		&.focus {
-			border-color: #1371ff;
-		}
 	}
 
 	.item {
@@ -190,11 +188,6 @@
 		color: #ffffff;
 		flex: none;
 		flex-grow: 0;
-		&.move {
-			display: flex;
-			align-items: center;
-			flex-basis: fit-content;
-		}
 		&.link {
 			cursor: pointer;
 			aspect-ratio: 1;
@@ -204,8 +197,8 @@
 			border-radius: 6px;
 			background: #3e4147;
 			width: 18px;
-			color: #9e9e9e;
 			height: 18px;
+			color: #9e9e9e;
 			svg {
 				width: 10px;
 				height: 10px;
